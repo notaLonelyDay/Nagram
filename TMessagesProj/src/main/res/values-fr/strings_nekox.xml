@@ -155,12 +155,11 @@
     <string name="DisableDeveloperMode">Désactiver le Mode Développeur</string>
     <string name="DeveloperSettings">Paramètres de développeur</string>
     <string name="LoginSettings">Paramètres de connexion</string>
-    <string name="NekoXFaq">FAQ NekoX</string>
+    <string name="NekoXFaq">FAQ Nagram</string>
     <string name="TransSite">Platforme de Traduction</string>
     <string name="OpenKayChain">Client OpenPGP</string>
     <string name="OpenPGPApp">Fournisseur OpenPGP</string>
     <string name="OpenPGPKey">Clé OpenPGP</string>
-    <string name="None">Aucun</string>
     <string name="PGPDecrypt">Déchiffrer le message</string>
     <string name="PGPVerify">Vérifier le message</string>
     <string name="PGPImport">Importer une clé publique</string>

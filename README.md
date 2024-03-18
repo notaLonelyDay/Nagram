@@ -96,75 +96,119 @@ Nagram is a third-party Telegram client based on [NekoX](https://github.com/Neko
 
 Telegram API manuals: <https://core.telegram.org/api>
 
-MTproto protocol manuals: <https://core.telegram.org/mtproto>
+MTProto protocol manuals: <https://core.telegram.org/mtproto>
 
-## Compilation Guide(By NekoX-dev)
+## Compilation Guide
 
-**NOTE: Building on Windows is, unfortunately, not supported.
-Consider using a Linux VM or dual booting.**
+**NOTE: For Windows users, please consider using a Linux VM (such as WSL2) or dual booting.**
 
-**Important:**
+Environment:
 
-1. Checkout all submodules
+- A Linux distribution based on Debian (e.g. Ubuntu)
 
-```
-git submodule update --init --recursive
-```
+- Native tools: `gcc` `go` `make` `cmake` `ninja` `yasm`
+  
+  ```shell
+  sudo apt install gcc golang make cmake ninja-build yasm
+  ```
+- Android SDK: `build-tools;33.0.0` `platforms;android-33` `ndk;21.4.7075529` `cmake;3.18.1` (the default location is **$HOME/Android/SDK**, otherwise you need to specify **$ANDROID_HOME** for it)
 
-2. Install Android SDK and NDK (default location is $HOME/Android/SDK, otherwise you need to specify $ANDROID_HOME for it)
+  It is recommended to use [Android Studio](https://developer.android.com/studio) to install, but you can also use `sdkmanager`:
 
-It is recommended to use [AndroidStudio](https://developer.android.com/studio) to install.
+  ```shell
+  sudo apt install sdkmanager
+  sdkmanager --sdk_root $HOME/Android/SDK --install "build-tools;33.0.0" "platforms;android-33" "ndk;21.4.7075529" "cmake;3.18.1"
+  ```
 
-3. Install golang and yasm
+Build: 
 
-```shell
-apt install -y golang-1.16 yasm
-```
+1. Checkout submodules
 
-4. Install Rust and its stdlib for Android ABIs, and add environment variables for it.
+   ```shell
+   git submodule update --init --recursive
+   ```
 
-It is recommended to use the official script, otherwise you may not find rustup.
+2. Build native dependencies:
+   ```shell
+   ./run init libs
+   ```
 
-```shell
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain none -y
-echo "source \$HOME/.cargo/env" >> $HOME/.bashrc && source $HOME/.cargo/env
+3. Build external libraries and native code: 
+   ```shell
+   ./run libs native
+   ```
 
-rustup install $(cat ss-rust/src/main/rust/shadowsocks-rust/rust-toolchain)
-rustup default $(cat ss-rust/src/main/rust/shadowsocks-rust/rust-toolchain)
-rustup target install armv7-linux-androideabi aarch64-linux-android i686-linux-android x86_64-linux-android
-```
+4. Fill out `TELEGRAM_APP_ID` and `TELEGRAM_APP_HASH` in **local.properties** (from [Telegram Developer](https://my.telegram.org/auth))
 
-This step can be skipped if you want to build a `mini` release.
+5. Replace **TMessagesProj/google-services.json** if you want FCM to work.
 
-5. Build native dependencies: `./run init libs`
-6. Build external libraries and native code:
+6. Replace **release.keystore** with yours and fill out `ALIAS_NAME`, `KEYSTORE_PASS` and `ALIAS_PASS` in **local.properties**.
 
-For full release:
+7. Build with Gradle:
 
-uncomment lines in settings.gradle  
-
-`./run libs update`
-
-For mini release:
-
-```
-./run libs v2ray
-./run libs native # libtmessages.so
-```
-
-1. Fill out `TELEGRAM_APP_ID` and `TELEGRAM_APP_HASH` in `local.properties`
-2. Replace TMessagesProj/google-services.json if you want fcm to work.
-3. Replace release.keystore with yours and fill out `ALIAS_NAME`, `KEYSTORE_PASS` and `ALIAS_PASS` in `local.properties` if you want a custom sign key.
-
-`./gradlew assemble<Full/Mini><Debug/Release/ReleaseNoGcm>`
+   ```shell
+   ./gradlew assembleMini<Debug/Release/ReleaseNoGcm>
+   ```
 
 ----
+
+## Compilation with GitHub Action
+
+1. Create your own `release.keystore` to replace `TMessagesProj/release.keystore`.
+
+2. Prepare LOCAL_PROPERTIES
+
+- KEYSTORE_PASS: from your keystore
+- ALIAS_NAME: from your keystore
+- ALIAS_PASS: from your keystore
+- TELEGRAM_APP_ID: from [Telegram Developer](https://my.telegram.org/auth)
+- TELEGRAM_APP_HASH: from [Telegram Developer](https://my.telegram.org/auth)
+
+```env
+KEYSTORE_PASS=123456
+ALIAS_NAME=key0
+ALIAS_PASS=123456
+TELEGRAM_APP_ID=123456
+TELEGRAM_APP_HASH=abcdefg
+```
+
+Then, use base64 to encode the above.
+
+3. Add Repo Action Secrets
+
+- LOCAL_PROPERTIES: from step 2
+- HELPER_BOT_TOKEN: from telegram [@Botfather](https://t.me/Botfather), such as `1111:abcd`
+- HELPER_BOT_TARGET: from telegram chat id, such as `777000`
+
+4. Run Release Build
+
+## FAQ
+
+#### What is the differences between Nagram, NekoX and Nekogram?
+
+Developed by different developers, read the feature list above to understand the differences.
+
+#### What is the noGcm version?
+
+Google Cloud Messaging, also known as gcm / fcm, message push service by google used by original Telegram android app, it requires your device to have Google Service Framework (non-free) installed.
+
+#### I've encountered a bug!
+
+First, make sure you have the latest version installed (check the channel).
+
+Then, if the issue appears in the official Telegram client too, please submit it to the officials, (be careful not to show NekoX in the description and screenshots, the official developers doesn't like us!).
+
+Then, submit it to our [group](https://t.me/nagram_group) with #bug.
+
+If you experience a *crash*, you also need to click on the version number at the bottom of the settings and select "Enable Log" and send it to us.
 
 ## Localization
 
 Nagram is forked from Telegram, thus most locales follows the translations of Telegram for Android, checkout <https://translations.telegram.org/en/android/>.
 
-Is Nagram not in your language, or the translation is incorrect or incomplete? Get involved in the translations on our [Weblate](https://hosted.weblate.org/engage/nekox/).
+Is Nagram not in your language, or the translation is incorrect or incomplete? Get involved in the translations on our [Weblate](https://xtaolabs.crowdin.com/nagram).
+
+[![Crowdin](https://badges.crowdin.net/e/156df3a631d257cc6b57301566d545fb/localized.svg)](https://xtaolabs.crowdin.com/nagram)
 
 ## Thanks
 

@@ -18,12 +18,7 @@ import java.util.Locale;
 
 import tw.nekomimi.nekogram.config.CellGroup;
 import tw.nekomimi.nekogram.config.ConfigItem;
-import tw.nekomimi.nekogram.config.cell.AbstractConfigCell;
-import tw.nekomimi.nekogram.config.cell.ConfigCellCustom;
-import tw.nekomimi.nekogram.config.cell.ConfigCellSelectBox;
-import tw.nekomimi.nekogram.config.cell.ConfigCellTextCheck;
-import tw.nekomimi.nekogram.config.cell.ConfigCellTextDetail;
-import tw.nekomimi.nekogram.config.cell.ConfigCellTextInput;
+import tw.nekomimi.nekogram.config.cell.*;
 
 public class BaseNekoXSettingsActivity extends BaseFragment {
     protected BlurredRecyclerView listView;
@@ -33,6 +28,18 @@ public class BaseNekoXSettingsActivity extends BaseFragment {
     protected HashMap<Integer, ConfigItem> rowConfigMapReverse = new HashMap<>(20);
 
     protected void updateRows() {
+    }
+
+    public int getBaseGuid() {
+        return 10000;
+    }
+
+    public int getDrawable() {
+        return 0;
+    }
+
+    public String getTitle() {
+        return "";
     }
 
     protected void addRowsToMap(CellGroup cellGroup) {
@@ -73,12 +80,16 @@ public class BaseNekoXSettingsActivity extends BaseFragment {
             return ((ConfigCellTextDetail) row).getBindConfig();
         } else if (row instanceof ConfigCellTextInput) {
             return ((ConfigCellTextInput) row).getBindConfig();
+        } else if (row instanceof ConfigCellAutoTextCheck) {
+            return ((ConfigCellAutoTextCheck) row).getBindConfig();
         }
         return null;
     }
 
     protected String getRowKey(AbstractConfigCell row) {
-        if (row instanceof ConfigCellTextCheck) {
+        if (row instanceof WithKey) {
+            return ((WithKey) row).getKey();
+        } else if (row instanceof ConfigCellTextCheck) {
             return ((ConfigCellTextCheck) row).getKey();
         } else if (row instanceof ConfigCellSelectBox) {
             return ((ConfigCellSelectBox) row).getKey();
@@ -88,6 +99,8 @@ public class BaseNekoXSettingsActivity extends BaseFragment {
             return ((ConfigCellTextInput) row).getKey();
         } else if (row instanceof ConfigCellCustom) {
             return ((ConfigCellCustom) row).getKey();
+        } else if (row instanceof ConfigCellAutoTextCheck) {
+            return ((ConfigCellAutoTextCheck) row).getKey();
         }
         return null;
     }
@@ -165,8 +178,12 @@ public class BaseNekoXSettingsActivity extends BaseFragment {
                 layoutManager.scrollToPositionWithOffset(finalPosition, AndroidUtilities.dp(60));
                 return finalPosition;
             });
-        } else {
+        } else if (unknown != null) {
             unknown.run();
         }
+    }
+
+    public HashMap<Integer, String> getRowMapReverse() {
+        return rowMapReverse;
     }
 }

@@ -64,6 +64,8 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter imple
     private SideMenultItemAnimator itemAnimator;
     private boolean hasGps;
 
+    public static int nkbtnNewStory = 1000;
+
     public DrawerLayoutAdapter(Context context, SideMenultItemAnimator animator, DrawerLayoutContainer drawerLayoutContainer) {
         mContext = context;
         mDrawerLayoutContainer = drawerLayoutContainer;
@@ -361,6 +363,15 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter imple
         if (MessagesController.getInstance(UserConfig.selectedAccount).storiesEnabled()) {
             items.add(new Item(16, LocaleController.getString("ProfileMyStories", R.string.ProfileMyStories), R.drawable.msg_menu_stories));
             showDivider = true;
+
+            if (NaConfig.INSTANCE.getDisableDialogsFloatingButton().Bool()) {
+                items.add(new Item(nkbtnNewStory, LocaleController.getString("RecorderNewStory", R.string.RecorderNewStory), R.drawable.msg_menu_stories));
+            }
+        }
+        if (ApplicationLoader.applicationLoaderInstance != null) {
+            if (ApplicationLoader.applicationLoaderInstance.extendDrawer(items)) {
+                showDivider = true;
+            }
         }
         TLRPC.TL_attachMenuBots menuBots = MediaDataController.getInstance(UserConfig.selectedAccount).getAttachMenuBots();
         if (menuBots != null && menuBots.bots != null) {
@@ -392,9 +403,9 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter imple
         items.add(new Item(11, LocaleController.getString("SavedMessages", R.string.SavedMessages), savedIcon));
         items.add(new Item(8, LocaleController.getString("Settings", R.string.Settings), settingsIcon));
         items.add(new Item(10, LocaleController.getString("Calls", R.string.Calls), callsIcon));
-        if (NekoConfig.useProxyItem.Bool() && (!NekoConfig.hideProxyByDefault.Bool() || SharedConfig.proxyEnabled)) {
-            items.add(new CheckItem(13, LocaleController.getString("Proxy", R.string.Proxy), R.drawable.menu_policy, () -> SharedConfig.proxyEnabled, () -> {
-                SharedConfig.setProxyEnable(!SharedConfig.proxyEnabled);
+        if (NekoConfig.useProxyItem.Bool() && (!NekoConfig.hideProxyByDefault.Bool() || SharedConfig.isProxyEnabled())) {
+            items.add(new CheckItem(13, LocaleController.getString("Proxy", R.string.Proxy), R.drawable.menu_policy, SharedConfig::isProxyEnabled, () -> {
+                SharedConfig.setProxyEnable(!SharedConfig.isProxyEnabled());
                 return true;
             }));
         }
@@ -410,6 +421,22 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter imple
                 return true;
             }));
         }
+    }
+
+    public boolean click(View view, int position) {
+        position -= 2;
+        if (accountsShown) {
+            position -= getAccountRowsCount();
+        }
+        if (position < 0 || position >= items.size()) {
+            return false;
+        }
+        Item item = items.get(position);
+        if (item != null && item.listener != null) {
+            item.listener.onClick(view);
+            return true;
+        }
+        return false;
     }
 
     public int getId(int position) {
@@ -462,13 +489,15 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter imple
         return item != null ? item.bot : null;
     }
 
-    private static class Item {
+    public static class Item {
         public int icon;
-        public String text;
+        public CharSequence text;
         public int id;
         TLRPC.TL_attachMenuBot bot;
+        View.OnClickListener listener;
+        public boolean error;
 
-        public Item(int id, String text, int icon) {
+        public Item(int id, CharSequence text, int icon) {
             this.icon = icon;
             this.id = id;
             this.text = text;
@@ -485,6 +514,17 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter imple
             } else {
                 actionCell.setTextAndIcon(id, text, icon);
             }
+            actionCell.setError(error);
+        }
+
+        public Item onClick(View.OnClickListener listener) {
+            this.listener = listener;
+            return this;
+        }
+
+        public Item withError() {
+            this.error = true;
+            return this;
         }
     }
 
@@ -500,7 +540,7 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter imple
         }
 
         public void bindCheck(DrawerActionCheckCell actionCell) {
-            actionCell.setTextAndValueAndCheck(text, icon, null, isChecked.invoke(), false, false);
+            actionCell.setTextAndValueAndCheck(text.toString(), icon, null, isChecked.invoke(), false, false);
             if (doSwitch != null) {
                 actionCell.setOnCheckClickListener((v) -> {
                     if (doSwitch.invoke()) {

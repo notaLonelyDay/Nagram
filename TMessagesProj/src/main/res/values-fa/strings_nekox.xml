@@ -170,12 +170,11 @@
     <string name="DisableDeveloperMode">غیرفعالسازی حالت توسعه‌دهنده</string>
     <string name="DeveloperSettings">تنظیمات توسعه‌دهنده</string>
     <string name="LoginSettings">تنظیمات ورود</string>
-    <string name="NekoXFaq">پرسش‌های متداول NekoX</string>
+    <string name="NekoXFaq">پرسش‌های متداول Nagram</string>
     <string name="TransSite">پلتفرم ترجمه</string>
     <string name="OpenKayChain">OpenPGP Client</string>
     <string name="OpenPGPApp">OpenPGP Provider</string>
     <string name="OpenPGPKey">کلید OpenPGP</string>
-    <string name="None">هیچ کدام</string>
     <string name="Sign">امضا</string>
     <string name="PGPDecrypt">رمزگشایی پیام</string>
     <string name="PGPVerify">تصدیق پیام</string>

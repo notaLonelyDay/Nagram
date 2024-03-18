@@ -318,7 +318,7 @@ public class EditTextEmoji extends FrameLayout implements NotificationCenter.Not
                 }
             } else if (!isPopupShowing()) {
                 showPopup(1);
-                emojiView.onOpen(editText.length() > 0);
+                emojiView.onOpen(editText.length() > 0, false);
                 editText.requestFocus();
             } else {
                 openKeyboardInternal();
@@ -487,6 +487,10 @@ public class EditTextEmoji extends FrameLayout implements NotificationCenter.Not
         editText.setSelection(selection);
     }
 
+    public void setSelection(int from, int to) {
+        editText.setSelection(from, to);
+    }
+
     public void hidePopup(boolean byBackButton) {
         if (isPopupShowing()) {
             showPopup(0);
@@ -532,6 +536,7 @@ public class EditTextEmoji extends FrameLayout implements NotificationCenter.Not
     }
 
     public void openKeyboard() {
+        editText.requestFocus();
         AndroidUtilities.showKeyboard(editText);
     }
 

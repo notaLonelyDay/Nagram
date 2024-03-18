@@ -169,12 +169,11 @@
     <string name="DisableDeveloperMode">A Fejlesztői mód letiltása</string>
     <string name="DeveloperSettings">Fejlesztői beállítások</string>
     <string name="LoginSettings">Bejelentkezés beállításai</string>
-    <string name="NekoXFaq">NekoX GYIK</string>
+    <string name="NekoXFaq">Nagram GYIK</string>
     <string name="TransSite">Fordítási platform</string>
     <string name="OpenKayChain">OpenPGP kliens</string>
     <string name="OpenPGPApp">OpenPGP Szolgáltató</string>
     <string name="OpenPGPKey">OpenPGP kulcs</string>
-    <string name="None">Egyik sem</string>
     <string name="Sign">Jel</string>
     <string name="PGPDecrypt">Az üzenet visszafejtése</string>
     <string name="PGPVerify">Üzenet ellenőrzése</string>

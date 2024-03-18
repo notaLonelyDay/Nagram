@@ -2,6 +2,7 @@ package xyz.nextalone.nagram
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.net.Uri
 import android.util.Base64
 import org.telegram.messenger.ApplicationLoader
 import org.telegram.messenger.LocaleController
@@ -465,6 +466,105 @@ object NaConfig {
             "ShowSquareAvatar",
             ConfigItem.configTypeBool,
             false
+        )
+    val disableCustomWallpaperUser =
+        addConfig(
+            "DisableCustomWallpaperUser",
+            ConfigItem.configTypeBool,
+            false
+        )
+    val disableCustomWallpaperChannel =
+        addConfig(
+            "DisableCustomWallpaperChannel",
+            ConfigItem.configTypeBool,
+            false
+        )
+    val externalStickerCache =
+        addConfig(
+            "ExternalStickerCache",
+            ConfigItem.configTypeString,
+            ""
+        )
+    var externalStickerCacheUri: Uri?
+        get() = externalStickerCache.String().let { if (it.isBlank()) return null else return Uri.parse(it) }
+        set(value) = externalStickerCache.setConfigString(value.toString())
+    val externalStickerCacheAutoRefresh =
+        addConfig(
+            "ExternalStickerCacheAutoRefresh",
+            ConfigItem.configTypeBool,
+            false
+        )
+    val externalStickerCacheDirNameType =
+        addConfig(
+            "ExternalStickerCacheDirNameType",
+            ConfigItem.configTypeInt,
+            0
+        )
+    val disableMarkdown =
+        addConfig(
+            "DisableMarkdown",
+            ConfigItem.configTypeBool,
+            false
+        )
+    val disableClickProfileGalleryView =
+        addConfig(
+            "DisableClickProfileGalleryView",
+            ConfigItem.configTypeBool,
+            false
+        )
+    val showSmallGIF =
+        addConfig(
+            "ShowSmallGIF",
+            ConfigItem.configTypeBool,
+            false
+        )
+    val disableClickCommandToSend =
+        addConfig(
+            "DisableClickCommandToSend",
+            ConfigItem.configTypeBool,
+            false
+        )
+    val disableDialogsFloatingButton =
+        addConfig(
+            "DisableDialogsFloatingButton",
+            ConfigItem.configTypeBool,
+            false
+        )
+    val disableFlagSecure =
+        addConfig(
+            "DisableFlagSecure",
+            ConfigItem.configTypeBool,
+            true
+        )
+    val centerActionBarTitle =
+        addConfig(
+            "CenterActionBarTitle",
+            ConfigItem.configTypeBool,
+            false
+        )
+    val showQuickReplyInBotCommands =
+        addConfig(
+            "ShowQuickReplyInBotCommands",
+            ConfigItem.configTypeBool,
+            false
+        )
+    val pushServiceType =
+        addConfig(
+            "PushServiceType",
+            ConfigItem.configTypeInt,
+            1
+        )
+    val pushServiceTypeInAppDialog =
+        addConfig(
+            "PushServiceTypeInAppDialog",
+            ConfigItem.configTypeBool,
+            true
+        )
+    val pushServiceTypeUnifiedGateway =
+        addConfig(
+            "PushServiceTypeUnifiedGateway",
+            ConfigItem.configTypeString,
+            "https://p2p.belloworld.it/"
         )
 
     private fun addConfig(

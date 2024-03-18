@@ -68,6 +68,8 @@ import tw.nekomimi.nekogram.utils.FileUtil;
 import tw.nekomimi.nekogram.utils.GsonUtil;
 import tw.nekomimi.nekogram.utils.ShareUtil;
 
+import static tw.nekomimi.nekogram.utils.UpdateUtil.channelUsernameTips;
+
 @SuppressLint("RtlHardcoded")
 public class NekoSettingsActivity extends BaseFragment {
 
@@ -85,6 +87,7 @@ public class NekoSettingsActivity extends BaseFragment {
 
     private int aboutRow;
     private int channelRow;
+    private int channelTipsRow;
 //    private int fdroidRow;
 //    private int googlePlayRow;
     private int sourceCodeRow;
@@ -185,14 +188,16 @@ public class NekoSettingsActivity extends BaseFragment {
                 presentFragment(new NekoExperimentalSettingsActivity());
             } else if (position == channelRow) {
                 MessagesController.getInstance(currentAccount).openByUserName("nagram_channel", this, 1);
+            } else if (position == channelTipsRow) {
+                MessagesController.getInstance(currentAccount).openByUserName(channelUsernameTips, this, 1);
             } else if (position == translationRow) {
-                Browser.openUrl(getParentActivity(), "https://hosted.weblate.org/engage/nekox/");
+                Browser.openUrl(getParentActivity(), "https://xtaolabs.crowdin.com/nagram");
 //            } else if (position == fdroidRow) {
 //                Browser.openUrl(getParentActivity(), "https://f-droid.org/packages/nekox.messenger");
 //            } else if (position == googlePlayRow) {
 //                Browser.openUrl(getParentActivity(), "https://play.google.com/store/apps/details?id=nekox.messenger");
             } else if (position == sourceCodeRow) {
-                Browser.openUrl(getParentActivity(), "https://github.com/NextAlone/NagramX");
+                Browser.openUrl(getParentActivity(), "https://github.com/NextAlone/Nagram");
             } else if (position == datacenterStatusRow) {
                 presentFragment(new DatacenterActivity(0));
             }
@@ -400,6 +405,7 @@ public class NekoSettingsActivity extends BaseFragment {
 
         aboutRow = rowCount++;
         channelRow = rowCount++;
+        channelTipsRow = rowCount++;
 //        fdroidRow = rowCount++;
         /*if (ExternalGcm.checkPlayServices()) {
             googlePlayRow = rowCount++;
@@ -504,6 +510,8 @@ public class NekoSettingsActivity extends BaseFragment {
 //                        textCell.setText(LocaleController.getString("AppLinkFDroid", R.string.AppLinkFDroid), true);
 //                    } else if (position == googlePlayRow) {
 //                        textCell.setText(LocaleController.getString("GooglePlay", R.string.GooglePlay), true);
+                    } else if (position == channelTipsRow) {
+                        textCell.setTextAndValue(LocaleController.getString("TipsChannel", R.string.TipsChannel), "@" + channelUsernameTips, true);
                     } else if (position == sourceCodeRow) {
                         textCell.setText(LocaleController.getString("SourceCode", R.string.SourceCode), true);
                     } else if (position == translationRow) {

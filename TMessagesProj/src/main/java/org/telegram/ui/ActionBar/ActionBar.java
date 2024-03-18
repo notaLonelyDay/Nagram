@@ -25,6 +25,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Layout;
@@ -67,6 +68,7 @@ import org.telegram.ui.Components.SnowflakesEffect;
 import java.util.ArrayList;
 
 import tw.nekomimi.nekogram.NekoConfig;
+import xyz.nextalone.nagram.NaConfig;
 
 public class ActionBar extends FrameLayout {
 
@@ -96,7 +98,7 @@ public class ActionBar extends FrameLayout {
     private String actionModeTag;
     private boolean ignoreLayoutRequest;
     protected boolean occupyStatusBar = Build.VERSION.SDK_INT >= 21;
-    private boolean actionModeVisible;
+    protected boolean actionModeVisible;
     private boolean addToContainer = true;
     private boolean clipContent;
     private boolean interceptTouches = true;
@@ -153,8 +155,6 @@ public class ActionBar extends FrameLayout {
     private View.OnTouchListener interceptTouchEventListener;
     private final Theme.ResourcesProvider resourcesProvider;
 
-    private PorterDuff.Mode colorFilterMode = PorterDuff.Mode.SRC_IN;
-
     SizeNotifierFrameLayout contentView;
     boolean blurredBackground;
     public Paint blurScrimPaint = new Paint();
@@ -179,10 +179,6 @@ public class ActionBar extends FrameLayout {
         });
     }
 
-    public void setColorFilterMode(PorterDuff.Mode colorFilterMode) {
-        this.colorFilterMode = colorFilterMode;
-    }
-
     public INavigationLayout.BackButtonState getBackButtonState() {
         if (backButtonDrawable instanceof INavigationLayout.IBackButtonDrawable) {
             return ((INavigationLayout.IBackButtonDrawable) backButtonDrawable).getBackButtonState();
@@ -197,9 +193,6 @@ public class ActionBar extends FrameLayout {
         backButtonImageView = new UnreadImageView(getContext());
         backButtonImageView.setScaleType(ImageView.ScaleType.CENTER);
         backButtonImageView.setBackgroundDrawable(Theme.createSelectorDrawable(itemsBackgroundColor));
-        if (itemsColor != 0) {
-            backButtonImageView.setColorFilter(new PorterDuffColorFilter(itemsColor, colorFilterMode));
-        }
         backButtonImageView.setPadding(dp(1), 0, 0, 0);
         addView(backButtonImageView, LayoutHelper.createFrame(54, 54, Gravity.LEFT | Gravity.TOP));
 
@@ -234,6 +227,8 @@ public class ActionBar extends FrameLayout {
             MenuDrawable menuDrawable = (MenuDrawable) drawable;
             menuDrawable.setBackColor(actionBarColor);
             menuDrawable.setIconColor(itemsColor);
+        } else if (drawable instanceof BitmapDrawable) {
+            backButtonImageView.setColorFilter(new PorterDuffColorFilter(itemsColor, PorterDuff.Mode.SRC_IN));
         }
     }
 
@@ -383,6 +378,7 @@ public class ActionBar extends FrameLayout {
         }
         backButtonImageView.setVisibility(resource == 0 ? GONE : VISIBLE);
         backButtonImageView.setImageResource(resource);
+        backButtonImageView.setColorFilter(new PorterDuffColorFilter(itemsColor, PorterDuff.Mode.SRC_IN));
     }
 
     private void createSubtitleTextView() {
@@ -390,7 +386,7 @@ public class ActionBar extends FrameLayout {
             return;
         }
         subtitleTextView = new SimpleTextView(getContext());
-        subtitleTextView.setGravity(Gravity.LEFT);
+        subtitleTextView.setGravity(NaConfig.INSTANCE.getCenterActionBarTitle().Bool() ? Gravity.CENTER : Gravity.LEFT);
         subtitleTextView.setVisibility(GONE);
         subtitleTextView.setTextColor(getThemedColor(Theme.key_actionBarDefaultSubtitle));
         addView(subtitleTextView, 0, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP));
@@ -401,7 +397,7 @@ public class ActionBar extends FrameLayout {
             return;
         }
         additionalSubtitleTextView = new SimpleTextView(getContext());
-        additionalSubtitleTextView.setGravity(Gravity.LEFT);
+        additionalSubtitleTextView.setGravity(NaConfig.INSTANCE.getCenterActionBarTitle().Bool() ? Gravity.CENTER : Gravity.LEFT);
         additionalSubtitleTextView.setVisibility(GONE);
         additionalSubtitleTextView.setTextColor(getThemedColor(Theme.key_actionBarDefaultSubtitle));
         addView(additionalSubtitleTextView, 0, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP));
@@ -443,7 +439,7 @@ public class ActionBar extends FrameLayout {
             return;
         }
         titleTextView[i] = new SimpleTextView(getContext());
-        titleTextView[i].setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+        titleTextView[i].setGravity((NaConfig.INSTANCE.getCenterActionBarTitle().Bool() ? Gravity.CENTER : Gravity.LEFT) | Gravity.CENTER_VERTICAL);
         if (titleColorToSet != 0) {
             titleTextView[i].setTextColor(titleColorToSet);
         } else {
@@ -1280,6 +1276,9 @@ public class ActionBar extends FrameLayout {
         for (int i = 0; i < 2; i++) {
             if (titleTextView[0] != null && titleTextView[0].getVisibility() != GONE || subtitleTextView != null && subtitleTextView.getVisibility() != GONE) {
                 int availableWidth = width - (menu != null ? menu.getMeasuredWidth() : 0) - dp(16) - textLeft - titleRightMargin;
+                if (NaConfig.INSTANCE.getCenterActionBarTitle().Bool()) {
+                    availableWidth =  width - dp(120);
+                }
 
                 if (((fromBottom && i == 0) || (!fromBottom && i == 1)) && overlayTitleAnimation && titleAnimationRunning) {
                     titleTextView[i].setTextSize(!AndroidUtilities.isTablet() && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 18 : 20);
@@ -1375,17 +1374,29 @@ public class ActionBar extends FrameLayout {
                         textTop = (getCurrentActionBarHeight() - titleTextView[i].getTextHeight()) / 2;
                     }
                 }
-                titleTextView[i].layout(textLeft, additionalTop + textTop - titleTextView[i].getPaddingTop(), textLeft + titleTextView[i].getMeasuredWidth(), additionalTop + textTop + titleTextView[i].getTextHeight() - titleTextView[i].getPaddingTop() + titleTextView[i].getPaddingBottom());
+                if (NaConfig.INSTANCE.getCenterActionBarTitle().Bool()) {
+                    titleTextView[i].layout(getMeasuredWidth() / 2 - titleTextView[i].getMeasuredWidth() / 2, additionalTop + textTop - titleTextView[i].getPaddingTop(), getMeasuredWidth() / 2 + titleTextView[i].getMeasuredWidth() / 2, additionalTop + textTop + titleTextView[i].getTextHeight() - titleTextView[i].getPaddingTop() + titleTextView[i].getPaddingBottom());
+                } else {
+                    titleTextView[i].layout(textLeft, additionalTop + textTop - titleTextView[i].getPaddingTop(), textLeft + titleTextView[i].getMeasuredWidth(), additionalTop + textTop + titleTextView[i].getTextHeight() - titleTextView[i].getPaddingTop() + titleTextView[i].getPaddingBottom());
+                }
             }
         }
         if (subtitleTextView != null && subtitleTextView.getVisibility() != GONE) {
             int textTop = getCurrentActionBarHeight() / 2 + (getCurrentActionBarHeight() / 2 - subtitleTextView.getTextHeight()) / 2 - dp(!AndroidUtilities.isTablet() && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 1 : 1);
-            subtitleTextView.layout(textLeft, additionalTop + textTop, textLeft + subtitleTextView.getMeasuredWidth(), additionalTop + textTop + subtitleTextView.getTextHeight());
+            if (NaConfig.INSTANCE.getCenterActionBarTitle().Bool()) {
+                subtitleTextView.layout(getMeasuredWidth() / 2 - subtitleTextView.getMeasuredWidth() / 2, additionalTop + textTop, getMeasuredWidth() / 2 + subtitleTextView.getMeasuredWidth() / 2, additionalTop + textTop + subtitleTextView.getTextHeight());
+            } else {
+                subtitleTextView.layout(textLeft, additionalTop + textTop, textLeft + subtitleTextView.getMeasuredWidth(), additionalTop + textTop + subtitleTextView.getTextHeight());
+            }
         }
 
         if (additionalSubtitleTextView != null && additionalSubtitleTextView.getVisibility() != GONE) {
             int textTop = getCurrentActionBarHeight() / 2 + (getCurrentActionBarHeight() / 2 - additionalSubtitleTextView.getTextHeight()) / 2 - dp(!AndroidUtilities.isTablet() && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 1 : 1);
-            additionalSubtitleTextView.layout(textLeft, additionalTop + textTop, textLeft + additionalSubtitleTextView.getMeasuredWidth(), additionalTop + textTop + additionalSubtitleTextView.getTextHeight());
+            if (NaConfig.INSTANCE.getCenterActionBarTitle().Bool()) {
+                additionalSubtitleTextView.layout(getMeasuredWidth() / 2 - additionalSubtitleTextView.getMeasuredWidth() / 2, additionalTop + textTop, getMeasuredWidth() / 2 + additionalSubtitleTextView.getMeasuredWidth() / 2, additionalTop + textTop + additionalSubtitleTextView.getTextHeight());
+            } else {
+                additionalSubtitleTextView.layout(textLeft, additionalTop + textTop, textLeft + additionalSubtitleTextView.getMeasuredWidth(), additionalTop + textTop + additionalSubtitleTextView.getTextHeight());
+            }
         }
 
         if (avatarSearchImageView != null) {
@@ -1624,18 +1635,21 @@ public class ActionBar extends FrameLayout {
                 Drawable drawable = backButtonImageView.getDrawable();
                 if (drawable instanceof BackDrawable) {
                     ((BackDrawable) drawable).setRotatedColor(color);
+                } else if (drawable instanceof BitmapDrawable) {
+                    backButtonImageView.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN));
                 }
             }
         } else {
             itemsColor = color;
             if (backButtonImageView != null) {
                 if (itemsColor != 0) {
-                    backButtonImageView.setColorFilter(new PorterDuffColorFilter(itemsColor, colorFilterMode));
                     Drawable drawable = backButtonImageView.getDrawable();
                     if (drawable instanceof BackDrawable) {
                         ((BackDrawable) drawable).setColor(color);
                     } else if (drawable instanceof MenuDrawable) {
                         ((MenuDrawable) drawable).setIconColor(color);
+                    } else if (drawable instanceof BitmapDrawable) {
+                        backButtonImageView.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN));
                     }
                 }
             }

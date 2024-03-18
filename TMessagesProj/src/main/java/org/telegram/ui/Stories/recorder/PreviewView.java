@@ -1464,17 +1464,18 @@ public class PreviewView extends FrameLayout {
             return null;
         }
         TLRPC.WallPaper wallpaper = null;
-        if (dialogId >= 0) {
-            TLRPC.UserFull userFull = MessagesController.getInstance(currentAccount).getUserFull(dialogId);
-            if (userFull != null) {
-                wallpaper = userFull.wallpaper;
-            }
-        } else {
-            TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(-dialogId);
-            if (chatFull != null) {
-                wallpaper = chatFull.wallpaper;
-            }
-        }
+//        if (dialogId >= 0) {
+//            TLRPC.UserFull userFull = MessagesController.getInstance(currentAccount).getUserFull(dialogId);
+//            if (userFull != null) {
+//                wallpaper = userFull.wallpaper;
+//            }
+//        } else {
+//            TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(-dialogId);
+//            if (chatFull != null) {
+//                wallpaper = chatFull.wallpaper;
+//            }
+//        }
+        wallpaper = ChatThemeController.getInstance(currentAccount).getDialogWallpaper(dialogId);
         return getBackgroundDrawable(prevDrawable, currentAccount, wallpaper, isDark);
     }
 
@@ -1613,7 +1614,7 @@ public class PreviewView extends FrameLayout {
 
     public static Drawable getBackgroundDrawableFromTheme(int currentAccount, EmojiThemes chatTheme, int prevPhase, boolean isDark, boolean preview) {
         Drawable drawable;
-        if (chatTheme.showAsDefaultStub) {
+        if (chatTheme.isAnyStub()) {
             Theme.ThemeInfo themeInfo = EmojiThemes.getDefaultThemeInfo(isDark);
             SparseIntArray currentColors = chatTheme.getPreviewColors(currentAccount, isDark ? 1 : 0);
             String wallpaperLink = chatTheme.getWallpaperLink(isDark ? 1 : 0);

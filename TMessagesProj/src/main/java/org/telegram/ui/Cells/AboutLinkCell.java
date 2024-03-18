@@ -191,9 +191,14 @@ public class AboutLinkCell extends FrameLayout {
         backgroundPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider));
 
         setWillNotDraw(false);
-        if (NaConfig.INSTANCE.getShowFullAbout().Bool()) {
-            onClick();
-        }
+    }
+
+    protected int processColor(int color) {
+        return color;
+    }
+
+    public void updateColors() {
+        Theme.profile_aboutTextPaint.linkColor = processColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider));
     }
 
     @Override
@@ -253,6 +258,8 @@ public class AboutLinkCell extends FrameLayout {
     private Paint backgroundPaint = new Paint();
     @Override
     public void draw(Canvas canvas) {
+        super.draw(canvas);
+
         View parent = (View) getParent();
         float alpha = parent == null ? 1f : (float) Math.pow(parent.getAlpha(), 2f);
 
@@ -277,8 +284,6 @@ public class AboutLinkCell extends FrameLayout {
         }
 
         container.draw(canvas);
-
-        super.draw(canvas);
     }
 
     final float SPACE = AndroidUtilities.dp(3f);
@@ -292,7 +297,7 @@ public class AboutLinkCell extends FrameLayout {
         canvas.translate(0, textY = AndroidUtilities.dp(8));
 
         try {
-            Theme.profile_aboutTextPaint.linkColor = Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider);
+            Theme.profile_aboutTextPaint.linkColor = processColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider));
             if (firstThreeLinesLayout == null || !shouldExpand) {
                 if (textLayout != null) {
                     textLayout.draw(canvas);
@@ -478,7 +483,8 @@ public class AboutLinkCell extends FrameLayout {
                 Spannable buffer = (Spannable) textLayout.getText();
                 ClickableSpan[] link = buffer.getSpans(off, off, ClickableSpan.class);
                 if (link.length != 0 && !AndroidUtilities.isAccessibilityScreenReaderEnabled()) {
-                    LinkSpanDrawable linkDrawable = new LinkSpanDrawable(link[0], parentFragment.getResourceProvider(), ex, ey);
+                    LinkSpanDrawable linkDrawable = new LinkSpanDrawable(link[0], resourcesProvider, ex, ey);
+                    linkDrawable.setColor(processColor(Theme.getColor(Theme.key_chat_linkSelectBackground, resourcesProvider)));
                     int start = buffer.getSpanStart(link[0]);
                     int end = buffer.getSpanEnd(link[0]);
                     LinkPath path = linkDrawable.obtainNewPath();
@@ -507,11 +513,12 @@ public class AboutLinkCell extends FrameLayout {
                     links.removeLoading(currentLoading, true);
                 }
                 currentLoading = thisLoading = LinkSpanDrawable.LinkCollector.makeLoading(layout, pressedLink, yOffset);
+                final int color = processColor(Theme.getColor(Theme.key_chat_linkSelectBackground, resourcesProvider));
                 thisLoading.setColors(
-                    Theme.multAlpha(Theme.getColor(Theme.key_chat_linkSelectBackground, resourcesProvider), .8f),
-                    Theme.multAlpha(Theme.getColor(Theme.key_chat_linkSelectBackground, resourcesProvider), 1.3f),
-                    Theme.multAlpha(Theme.getColor(Theme.key_chat_linkSelectBackground, resourcesProvider), 1f),
-                    Theme.multAlpha(Theme.getColor(Theme.key_chat_linkSelectBackground, resourcesProvider), 4f)
+                    Theme.multAlpha(color, .8f),
+                    Theme.multAlpha(color, 1.3f),
+                    Theme.multAlpha(color, 1f),
+                    Theme.multAlpha(color, 4f)
                 );
                 thisLoading.strokePaint.setStrokeWidth(AndroidUtilities.dpf2(1.25f));
                 links.addLoading(thisLoading);
@@ -689,7 +696,7 @@ public class AboutLinkCell extends FrameLayout {
 
     private StaticLayout makeTextLayout(CharSequence string, int width) {
         if (Build.VERSION.SDK_INT >= 24) {
-            return StaticLayout.Builder.obtain(string, 0, string.length(), Theme.profile_aboutTextPaint, width)
+            return StaticLayout.Builder.obtain(string, 0, string.length(), Theme.profile_aboutTextPaint, Math.max(1, width))
                     .setBreakStrategy(StaticLayout.BREAK_STRATEGY_SIMPLE)
                     .setHyphenationFrequency(StaticLayout.HYPHENATION_FREQUENCY_NONE)
                     .setAlignment(LocaleController.isRTL ? StaticLayoutEx.ALIGN_RIGHT() : StaticLayoutEx.ALIGN_LEFT())
@@ -706,6 +713,10 @@ public class AboutLinkCell extends FrameLayout {
         if (stringBuilder != null && (maxWidth != lastMaxWidth || force)) {
             textLayout = makeTextLayout(stringBuilder, maxWidth);
             shouldExpand = textLayout.getLineCount() >= 4; // && valueTextView.getVisibility() != View.VISIBLE;
+
+            if (NaConfig.INSTANCE.getShowFullAbout().Bool() && shouldExpand) {
+                shouldExpand = false;
+            }
 
             if (textLayout.getLineCount() >= 3 && shouldExpand) {
                 int end = Math.max(textLayout.getLineStart(2), textLayout.getLineEnd(2));

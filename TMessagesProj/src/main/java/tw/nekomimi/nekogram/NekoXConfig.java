@@ -27,11 +27,12 @@ import java.util.regex.Pattern;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
 import tw.nekomimi.nekogram.database.NitritesKt;
+import xyz.nextalone.nagram.NaConfig;
 
 public class NekoXConfig {
 
     //  public static String FAQ_URL = "https://telegra.ph/NekoX-FAQ-03-31";
-    public static String FAQ_URL = "https://github.com/NekoX-Dev/NekoX#faq";
+    public static String FAQ_URL = "https://github.com/NextAlone/Nagram#faq";
     public static long[] officialChats = {
 //            1305127566, // NekoX Updates
 //            1151172683, // NekoX Chat
@@ -39,6 +40,7 @@ public class NekoXConfig {
 //            1137038259, // NekoX APKs
             1500637449, // Nagram
             1645699549, // Nagram Updates
+            2001739482, // Nagram Tips
     };
 
     public static long[] developers = {
@@ -47,7 +49,8 @@ public class NekoXConfig {
             784901712, // NextAlone
             457896977, // Queally
             782954985, // MaiTungTM
-            5412523572L //blxueya
+            5412523572L, //blxueya
+            676660002, // mrwangzhe
     };
 
     public static final int TITLE_TYPE_TEXT = 0;
@@ -64,7 +67,7 @@ public class NekoXConfig {
 
     public static boolean developerMode = preferences.getBoolean("developer_mode", true);
 
-    public static boolean disableFlagSecure = preferences.getBoolean("disable_flag_secure", true);
+    public static boolean disableFlagSecure = NaConfig.INSTANCE.getDisableFlagSecure().Bool();
     public static boolean disableScreenshotDetection = preferences.getBoolean("disable_screenshot_detection", false);
 
     public static boolean disableStatusUpdate = preferences.getBoolean("disable_status_update", false);
@@ -90,7 +93,10 @@ public class NekoXConfig {
     }
 
     public static void toggleDisableFlagSecure() {
-        preferences.edit().putBoolean("disable_flag_secure", disableFlagSecure = !disableFlagSecure).apply();
+//        preferences.edit().putBoolean("disable_flag_secure", disableFlagSecure = !disableFlagSecure).apply();
+
+        disableFlagSecure = !disableFlagSecure;
+        NaConfig.INSTANCE.getDisableFlagSecure().toggleConfigBool();
     }
 
     public static void toggleDisableScreenshotDetection() {

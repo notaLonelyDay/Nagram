@@ -26,6 +26,7 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.PowerManager;
@@ -35,21 +36,28 @@ import android.util.Log;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.FileProvider;
 import androidx.multidex.MultiDex;
 
 import androidx.multidex.MultiDex;
 
+import org.json.JSONObject;
 import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.Adapters.DrawerLayoutAdapter;
+import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.ForegroundDetector;
 import org.telegram.ui.Components.Premium.boosts.BoostRepository;
+import org.telegram.ui.Components.UpdateAppAlertDialog;
+import org.telegram.ui.Components.UpdateLayout;
 import org.telegram.ui.IUpdateLayout;
 import org.telegram.ui.LauncherIconController;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 
@@ -57,6 +65,7 @@ import tw.nekomimi.nekogram.NekoConfig;
 import tw.nekomimi.nekogram.NekoXConfig;
 import tw.nekomimi.nekogram.parts.SignturesKt;
 import tw.nekomimi.nekogram.utils.FileUtil;
+import xyz.nextalone.nagram.NaConfig;
 
 import static android.os.Build.VERSION.SDK_INT;
 
@@ -107,17 +116,7 @@ public class ApplicationLoader extends Application {
 
     public static ILocationServiceProvider getLocationServiceProvider() {
         if (locationServiceProvider == null) {
-            if (BuildVars.isGServicesCompiled) {
-                try {
-                    locationServiceProvider = (ILocationServiceProvider) Class.forName("org.telegram.messenger.GoogleLocationProvider").newInstance();
-                    locationServiceProvider.init(applicationContext);
-                } catch (Exception e) {
-                    FileLog.e("Failed to load GoogleLocationService Provider from gservices", e);
-                    locationServiceProvider = new ILocationServiceProvider.DummyLocationServiceProvider();
-                }
-            } else {
-                locationServiceProvider = new ILocationServiceProvider.DummyLocationServiceProvider();
-            }
+            locationServiceProvider = new GoogleLocationProvider();
         }
         return locationServiceProvider;
     }
@@ -127,16 +126,7 @@ public class ApplicationLoader extends Application {
             if (NekoConfig.useOSMDroidMap.Bool())
                 mapsProvider = new OSMDroidMapsProvider();
             else {
-                if (BuildVars.isGServicesCompiled) {
-                    try {
-                        mapsProvider = (IMapsProvider) Class.forName("org.telegram.messenger.GoogleMapsProvider").newInstance();
-                    } catch (Exception e) {
-                        FileLog.e("Failed to load Google Maps Provider from gservices", e);
-                        mapsProvider = new OSMDroidMapsProvider();
-                    }
-                } else {
-                    mapsProvider = new OSMDroidMapsProvider();
-                }
+                mapsProvider = new GoogleMapsProvider();
             }
         }
         return mapsProvider;
@@ -374,6 +364,13 @@ public class ApplicationLoader extends Application {
         if (enabled) {
             AndroidUtilities.runOnUIThread(() -> {
                 try {
+                    Log.d("TFOSS", "Starting push service...");
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && NaConfig.INSTANCE.getPushServiceTypeInAppDialog().Bool()) {
+                        applicationContext.startForegroundService(new Intent(applicationContext, NotificationsService.class));
+                    } else {
+                        applicationContext.startService(new Intent(applicationContext, NotificationsService.class));
+                    }
+
                     Log.d("TFOSS", "Trying to start push service every 10 minutes");
                     // Telegram-FOSS: unconditionally enable push service
                     AlarmManager am = (AlarmManager) applicationContext.getSystemService(Context.ALARM_SERVICE);
@@ -382,13 +379,6 @@ public class ApplicationLoader extends Application {
 
                     am.cancel(pendingIntent);
                     am.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 10 * 60 * 1000, pendingIntent);
-
-                    Log.d("TFOSS", "Starting push service...");
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        applicationContext.startForegroundService(new Intent(applicationContext, NotificationsService.class));
-                    } else {
-                        applicationContext.startService(new Intent(applicationContext, NotificationsService.class));
-                    }
                 } catch (Throwable e) {
                     Log.d("TFOSS", "Failed to start push service");
                 }
@@ -505,11 +495,6 @@ public class ApplicationLoader extends Application {
             FileLog.e(e);
         }
         return false;
-    }
-
-    public static boolean useLessData() {
-        ensureCurrentNetworkGet();
-        return BuildVars.DEBUG_PRIVATE_VERSION && (SharedConfig.forceLessData || isConnectionSlow());
     }
 
     public static boolean isConnectionSlow() {
@@ -663,18 +648,89 @@ public class ApplicationLoader extends Application {
     }
 
     public boolean checkApkInstallPermissions(final Context context) {
-        return false;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !ApplicationLoader.applicationContext.getPackageManager().canRequestPackageInstalls()) {
+            AlertsCreator.createApkRestrictedDialog(context, null).show();
+            return false;
+        }
+        return true;
     }
 
     public boolean openApkInstall(Activity activity, TLRPC.Document document) {
-        return false;
+        boolean exists = false;
+        try {
+            String fileName = FileLoader.getAttachFileName(document);
+            File f = FileLoader.getInstance(UserConfig.selectedAccount).getPathToAttach(document, true);
+            if (exists = f.exists()) {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                if (Build.VERSION.SDK_INT >= 24) {
+                    intent.setDataAndType(FileProvider.getUriForFile(activity, ApplicationLoader.getApplicationId() + ".provider", f), "application/vnd.android.package-archive");
+                } else {
+                    intent.setDataAndType(Uri.fromFile(f), "application/vnd.android.package-archive");
+                }
+                try {
+                    activity.startActivityForResult(intent, 500);
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
+            }
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+        return exists;
     }
 
     public boolean showUpdateAppPopup(Context context, TLRPC.TL_help_appUpdate update, int account) {
-        return false;
+        try {
+            (new UpdateAppAlertDialog(context, update, account)).show();
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+        return true;
     }
 
     public IUpdateLayout takeUpdateLayout(Activity activity, ViewGroup sideMenu, ViewGroup sideMenuContainer) {
+        return new UpdateLayout(activity, sideMenu, sideMenuContainer);
+    }
+
+    public TLRPC.Update parseTLUpdate(int constructor) {
+        return null;
+    }
+
+    public void processUpdate(int currentAccount, TLRPC.Update update) {
+
+    }
+
+    public boolean onSuggestionFill(String suggestion, CharSequence[] output, boolean[] closeable) {
+        return false;
+    }
+
+    public boolean onSuggestionClick(String suggestion) {
+        return false;
+    }
+
+    public boolean extendDrawer(ArrayList<DrawerLayoutAdapter.Item> items) {
+        return false;
+    }
+
+    public boolean checkRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
+        return false;
+    }
+
+    public boolean consumePush(int account, JSONObject json) {
+        return false;
+    }
+
+    public void onResume() {
+
+    }
+
+    public boolean onPause() {
+        return false;
+    }
+
+    public BaseFragment openSettings(int n) {
         return null;
     }
 
